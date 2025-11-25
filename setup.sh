@@ -21,17 +21,18 @@ sudo rm -rf $APP_DIR
 sudo git clone $REPO_URL $APP_DIR
 
 # Asignar permisos al usuario 'ubuntu'
-sudo chown -R ubuntu:ubuntu $APP_DIR
+APP_USER=$(whoami) # O usar $SUDO_USER si la línea está dentro de un bloque sudo
+sudo chown -R $APP_USER:$APP_USER $APP_DIR
 
 # 5. Instalar dependencias
 cd $APP_DIR
 echo "--- Instalando dependencias (npm install) ---"
-sudo -u ubuntu npm install
+sudo -u $APP_USER npm install
 
 # 6. INICIAR LA APP (Aquí estaba el error)
 echo "--- Iniciando aplicación: app/server.js ---"
 if [ -f "app/server.js" ]; then
-    sudo -u ubuntu pm2 start app/server.js --name "app"
+    sudo -u $APP_USER pm2 start app/server.js --name "app"
 else
     echo "ERROR CRÍTICO: No se encontró app/server.js en $(pwd)"
     ls -R
@@ -40,13 +41,13 @@ fi
 
 # 7. Configurar Persistencia de PM2
 echo "--- Configurando persistencia de PM2 ---"
-sudo -u ubuntu pm2 save
+sudo -u $APP_USER pm2 save
 
-STARTUP_CMD=$(sudo -u ubuntu pm2 startup systemd | grep "sudo env")
+STARTUP_CMD=$(sudo -u $APP_USER pm2 startup systemd | grep "sudo env")
 if [ -n "$STARTUP_CMD" ]; then
     echo "Ejecutando startup: $STARTUP_CMD"
     eval $STARTUP_CMD
-    sudo -u ubuntu pm2 save
+    sudo -u $APP_USER pm2 save
 else
     echo "ADVERTENCIA: No se pudo generar el startup automático."
 fi
